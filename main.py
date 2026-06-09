@@ -111,29 +111,18 @@ class PredictResponse(BaseModel):
 
 # ─── Current Stock ────────────────────────────────────────────────────────────
 
-def calc_current_stock(blood_bags: List[BloodBagItem]) -> dict:
-    """
-    بيحسب المخزون الحالي من الأكياس المتاحة (Status = 0).
-    الأكياس المنتهية صلاحيتها بتتستبعد.
-    كل كيس = وحدة واحدة.
-    """
+def calc_current_stock(blood_bags):
     stock = {}
-    now   = datetime.utcnow()
 
     for bag in blood_bags:
         if bag.status != AVAILABLE_STATUS:
             continue
-        if bag.expiry_date:
-            try:
-                exp = datetime.fromisoformat(bag.expiry_date.replace("Z", ""))
-                if exp <= now:
-                    continue
-            except ValueError:
-                pass
+
         bt = label_blood_type(bag.blood_type)
         stock[bt] = stock.get(bt, 0) + 1
 
     return stock
+
 
 # ─── Consumption History ──────────────────────────────────────────────────────
 
