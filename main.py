@@ -41,7 +41,7 @@ app.add_middleware(
 
 LAGS         = [1, 2, 3, 7, 14]
 ROLL_WINDOWS = [7, 14]
-MIN_POINTS   = 40
+MIN_POINTS   = 30
 RANDOM_STATE = 42
 
 AVAILABLE_STATUS = 0   # BloodBagStatus.Available  → مخزون
