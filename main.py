@@ -41,7 +41,7 @@ app.add_middleware(
 
 LAGS         = [1, 2, 3, 7, 14]
 ROLL_WINDOWS = [7, 14]
-MIN_POINTS   = 30
+MIN_POINTS   = 25              # أقل عدد أيام سحب عشان ندرّب الموديل
 RANDOM_STATE = 42
 
 AVAILABLE_STATUS = 0   # BloodBagStatus.Available  → مخزون
@@ -111,18 +111,29 @@ class PredictResponse(BaseModel):
 
 # ─── Current Stock ────────────────────────────────────────────────────────────
 
-def calc_current_stock(blood_bags):
+def calc_current_stock(blood_bags: List[BloodBagItem]) -> dict:
+    """
+    بيحسب المخزون الحالي من الأكياس المتاحة (Status = 0).
+    الأكياس المنتهية صلاحيتها بتتستبعد.
+    كل كيس = وحدة واحدة.
+    """
     stock = {}
+    now   = datetime.utcnow()
 
     for bag in blood_bags:
         if bag.status != AVAILABLE_STATUS:
             continue
-
+        if bag.expiry_date:
+            try:
+                exp = datetime.fromisoformat(bag.expiry_date.replace("Z", ""))
+                if exp <= now:
+                    continue
+            except ValueError:
+                pass
         bt = label_blood_type(bag.blood_type)
         stock[bt] = stock.get(bt, 0) + 1
 
     return stock
-
 
 # ─── Consumption History ──────────────────────────────────────────────────────
 
@@ -140,7 +151,6 @@ def build_daily_consumption(blood_bags: List[BloodBagItem], blood_type: str):
             continue
         if bag.status != USED_STATUS:
             continue
-        # بنستخدم withdrawn_at (تاريخ السحب الفعلي) لو موجود، وإلا created_at
         date_str = bag.withdrawn_at or bag.created_at
         try:
             day = datetime.fromisoformat(date_str.replace("Z", "")).date()
